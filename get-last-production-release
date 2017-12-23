@@ -1,0 +1,4 @@
+#!/bin/sh
+
+#fetch -qo - http://svn.freebsd.org/base/releng/ | grep [0-9].[0-9]/ |  awk '{gsub("<[^>]*>", "")}1' | sort -n | tail -n1 | sed 's|/||g' | sed 's| ||g'
+fetch -qo - http://svn.freebsd.org/base/releng/ | awk -F'[>/]' 'BEGIN { max=0; } $4 ~ /^[0-9]/ { if (0 + $4 > max) { max = 0 + $4 } } END { print max }'

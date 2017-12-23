@@ -1,0 +1,5 @@
+#!/usr/local/bin/bash
+
+cv=$(freebsd-version | cut -d'-' -f1)
+url="http://svn.freebsd.org/base/releng/"$cv"/sys/conf/newvers.sh"
+fetch -qo - $url | grep -E "TYPE|REVISION|BRANCH" | head -n3
