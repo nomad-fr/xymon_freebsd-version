@@ -1,0 +1,70 @@
+#!/usr/local/bin/zsh
+
+# Revision History:
+# 1. Michel Le Cocq, original
+
+TEST='freebsd-version'
+#UPGRADEVERSION=$(cat /tmp/lastest-freebsd-version | grep latest | awk '{print $1}')
+HOSTVERSION=$(/bin/freebsd-version)
+
+#LASTRELEASE=$(/root/bin/check-last-release)
+
+LASTPRODRELEASE=$(/root/bin/get-last-production-release)
+
+/root/bin/check-last-release > /tmp/last-release
+source /tmp/last-release
+LASTRELEASE=$(cat /tmp/last-release)
+UPGRADEVERSION=$(echo $REVISION'-'$BRANCH)
+
+for h in `jls -n name | cut -d'=' -f2 | grep -v 'builder-'; hostname`
+do    
+
+        if [[ $h == $(hostname) ]]; 
+        then 
+            CURRENTVERSION=$HOSTVERSION
+        else
+            CURRENTVERSION=$(/usr/local/bin/sudo /usr/sbin/jexec -U xymon $h /bin/freebsd-version)
+        fi
+
+        DISPCOLOR='green'
+
+        if [ "$CURRENTVERSION" = "$UPGRADEVERSION" ]
+        then
+            DISPCOLOR='green'
+        else
+            DISPCOLOR='red'
+        fi
+
+	if [ "$DISPCOLOR" = "green" ]
+	then
+            if [ "$REVISION" = "$LASTPRODRELEASE" ]
+            then
+		DISPCOLOR='green'
+            else
+		DISPCOLOR='yellow'
+            fi
+	fi
+	
+        FIRST_LINE='freebsd-version'
+        DATA='<br>freebsd-version : '$CURRENTVERSION'<br>freebsd-upgrade : '$UPGRADEVERSION
+
+        # What: Sent out the final bb message to hobbit server.
+        $BB $BBDISP "status $h.$TEST $DISPCOLOR `date` $FIRST_LINE\
+            $(echo;
+              echo "-----------------------------------------------------------------------------";
+	      echo "         Release in use : "$REVISION
+	      echo "Last Production Release : "$LASTPRODRELEASE
+              echo "-----------------------------------------------------------------------------";
+              echo "        Revision in use : "$CURRENTVERSION
+
+              if [[ $h != $(hostname) ]]; 
+              then 
+                 echo "    host version : "$HOSTVERSION
+              fi
+              echo "          Last Revision : "$UPGRADEVERSION
+              echo "-----------------------------------------------------------------------------";
+	      echo $LOG
+              echo;echo)"
+
+done
+
